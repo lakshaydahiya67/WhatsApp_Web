@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.dist/
+.eggs/
+.venv/
+venv/
+.env
+.env.*
+.python-version
+
+# Node / JS
+node_modules/
+.npm/
+.yarn/
+.pnp.*
+frontend/dist/
+frontend/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors/IDE
+.vscode/
+.idea/
+*.swp
+
+# Coverage / reports
+coverage/
+*.cover
+*.coverage
+*.lcov
+
+# Build & cache
+.cache/
+.eslintcache
+
+# Misc
+*.local
+
+Full Stack Developer Evaluation Task.pdf
+requirements.md
+tasks.md
+whatsapp sample payloads.zip
