@@ -14,6 +14,7 @@ html, body, #root {
   --wa-bubble-out: #d9fdd3;  /* outgoing bubble */
   --wa-blue: #53bdeb;        /* read ticks */
   --wa-tick-grey: #8696a0;   /* sent/delivered ticks */
+  --wa-text-secondary: #667781;
 }
 
 body {
@@ -40,5 +41,44 @@ body {
     radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0),
     radial-gradient(circle at 10px 10px, rgba(0,0,0,0.03) 1px, transparent 0);
   background-size: 14px 14px;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  font-weight: 600;
+}
+
+.bubble-in {
+  background: #ffffff;
+  border-radius: 12px 12px 12px 0px;
+}
+
+.bubble-out {
+  background: var(--wa-bubble-out);
+  border-radius: 12px 12px 0px 12px;
+}
+
+.time-ticks {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8696a0;
+}
+
+.date-chip {
+  display: inline-block;
+  margin: 8px auto;
+  padding: 4px 10px;
+  background: #e7f1ff;
+  color: #3b4a54;
+  border-radius: 12px;
+  font-size: 12px;
 }
 

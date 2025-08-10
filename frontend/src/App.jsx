@@ -4,16 +4,54 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 function StatusTicks({ status }) {
   if (!status) return null
-  if (status === 'sent') return <span title="sent" className="text-[var(--wa-tick-grey)]">✓</span>
-  if (status === 'delivered') return <span title="delivered" className="text-[var(--wa-tick-grey)]">✓✓</span>
-  if (status === 'read') return <span title="read" style={{color:'var(--wa-blue)'}}>✓✓</span>
+  if (status === 'sent') return (
+    <svg width="16" height="12" viewBox="0 0 18 14" aria-label="sent">
+      <path d="M5 8l-3-3  -2 2 5 5 10-10 -2-2z" fill="currentColor" />
+    </svg>
+  )
+  if (status === 'delivered') return (
+    <svg width="20" height="14" viewBox="0 0 24 14" aria-label="delivered" className="text-[var(--wa-tick-grey)]">
+      <path d="M6 8l-3-3 -2 2 5 5 7-7 -2-2z" fill="currentColor" />
+      <path d="M13 8l-3-3 -2 2 5 5 7-7 -2-2z" fill="currentColor" />
+    </svg>
+  )
+  if (status === 'read') return (
+    <svg width="20" height="14" viewBox="0 0 24 14" aria-label="read" style={{color:'var(--wa-blue)'}}>
+      <path d="M6 8l-3-3 -2 2 5 5 7-7 -2-2z" fill="currentColor" />
+      <path d="M13 8l-3-3 -2 2 5 5 7-7 -2-2z" fill="currentColor" />
+    </svg>
+  )
   return null
 }
+
+const IST_TZ = 'Asia/Kolkata'
 
 function formatTime(epochSec) {
   if (!epochSec) return ''
   const d = new Date(epochSec * 1000)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: IST_TZ })
+}
+
+function dayKeyIST(epochSec) {
+  const d = new Date(epochSec * 1000)
+  // en-CA yields YYYY-MM-DD stable sortable key
+  return d.toLocaleDateString('en-CA', { timeZone: IST_TZ })
+}
+
+function formatDateChip(epochSec) {
+  const d = new Date(epochSec * 1000)
+  const keyMsg = dayKeyIST(epochSec)
+  const keyToday = new Date().toLocaleDateString('en-CA', { timeZone: IST_TZ })
+  const parseKey = (k) => {
+    const [y, m, dd] = k.split('-').map(Number)
+    return Date.UTC(y, m - 1, dd)
+  }
+  const oneDay = 24 * 60 * 60 * 1000
+  const diffDays = Math.round((parseKey(keyToday) - parseKey(keyMsg)) / oneDay)
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return d.toLocaleDateString('en-IN', { weekday: 'long', timeZone: IST_TZ })
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: IST_TZ })
 }
 
 export default function App() {
@@ -22,12 +60,15 @@ export default function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [conversationsLoading, setConversationsLoading] = useState(true)
+  const [messagesLoading, setMessagesLoading] = useState(false)
   const [showList, setShowList] = useState(true)
   const [ws, setWs] = useState(null)
   const [showColdStartInfo, setShowColdStartInfo] = useState(true)
 
-  async function fetchConversations() {
+  async function fetchConversations(silent = false) {
     try {
+      if (!silent) setConversationsLoading(true)
       const res = await fetch(`${API_BASE}/conversations`)
       if (!res.ok) throw new Error('failed')
       const data = await res.json()
@@ -38,18 +79,23 @@ export default function App() {
       }
     } catch (e) {
       setConversations([])
+    } finally {
+      if (!silent) setConversationsLoading(false)
     }
   }
 
-  async function fetchMessages(waId) {
+  async function fetchMessages(waId, silent = false) {
     if (!waId) return
     try {
+      if (!silent) setMessagesLoading(true)
       const res = await fetch(`${API_BASE}/messages?wa_id=${encodeURIComponent(waId)}`)
       if (!res.ok) throw new Error('failed')
       const data = await res.json()
       setMessages(Array.isArray(data) ? data : [])
     } catch (e) {
       setMessages([])
+    } finally {
+      if (!silent) setMessagesLoading(false)
     }
   }
 
@@ -64,9 +110,9 @@ export default function App() {
   // Polling for updates every 5s
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchConversations()
+      fetchConversations(true)
       if (activeWaId) {
-        fetchMessages(activeWaId)
+        fetchMessages(activeWaId, true)
       }
     }, 5000)
     return () => clearInterval(interval)
@@ -81,9 +127,9 @@ export default function App() {
         try {
           const data = JSON.parse(evt.data)
           if (data?.type === 'insert') {
-            fetchConversations()
+            fetchConversations(true)
             if (data.message?.waId === activeWaId) {
-              fetchMessages(activeWaId)
+              fetchMessages(activeWaId, true)
             }
           }
         } catch {}
@@ -152,7 +198,20 @@ export default function App() {
             <div className="font-semibold">Chats</div>
           </div>
           <div className="flex-1 overflow-auto chat-scroll">
-            {Array.isArray(conversations) && conversations.map((c) => (
+            {conversationsLoading && (
+              <div className="p-3 space-y-2">
+                {[...Array(4)].map((_,i)=> (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="avatar-circle animate-pulse bg-gray-300" />
+                    <div className="flex-1">
+                      <div className="h-3 w-1/3 bg-gray-200 animate-pulse rounded mb-2"></div>
+                      <div className="h-2 w-1/2 bg-gray-100 animate-pulse rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!conversationsLoading && Array.isArray(conversations) && conversations.map((c) => (
               <button
                 key={c.waId}
                 onClick={() => {
@@ -161,15 +220,15 @@ export default function App() {
                 }}
                 className={`w-full text-left px-4 py-3 flex gap-3 items-center chat-row ${activeWaId===c.waId ? 'bg-gray-100' : ''}`}
               >
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
+                <div className="avatar-circle">
                   {(c.name?.[0] || c.waId?.[0] || '?')}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
                     <div className="font-medium truncate">{c.name || c.waId}</div>
-                    <div className="text-[11px] text-gray-500 ml-2 shrink-0">{formatTime(c.lastMessageAt)}</div>
+                    <div className="text-[11px] text-[var(--wa-text-secondary)] ml-2 shrink-0">{formatTime(c.lastMessageAt)}</div>
                   </div>
-                  <div className="flex items-center gap-1 text-[13px] text-gray-600 truncate">
+                  <div className="flex items-center gap-1 text-[13px] text-[var(--wa-text-secondary)] truncate">
                     {c.lastMessageDirection === 'outbound' && <StatusTicks status={c.lastMessageStatus} />}
                     <span className="truncate">{c.lastMessageText}</span>
                   </div>
@@ -188,16 +247,42 @@ export default function App() {
             </div>
             <button className="md:hidden text-[var(--wa-accent)]" onClick={()=>setShowList(true)}>Back</button>
           </div>
-          <div className="flex-1 overflow-auto p-4 space-y-2 chat-scroll chat-bg">
-            {Array.isArray(messages) && messages.map((m) => (
-              <div key={m._id} className={`max-w-[70%] px-3 py-2 rounded-lg text-[14px] ${m.direction==='outbound' ? 'ml-auto' : 'mr-auto'} ${m.direction==='outbound' ? 'bg-[var(--wa-bubble-out)]' : 'bg-white'}`}>
-                <div className="whitespace-pre-wrap break-words">{m.text}</div>
-                <div className="flex justify-end items-center gap-1 text-[10px] text-gray-500 mt-1">
-                  <span>{formatTime(m.timestamps?.whatsapp)}</span>
-                  {m.direction==='outbound' && <StatusTicks status={m.status} />}
-                </div>
+          <div className="flex-1 overflow-auto p-4 space-y-1 chat-scroll chat-bg">
+            {messagesLoading && (
+              <div className="space-y-1">
+                {[...Array(5)].map((_,i)=> (
+                  <div key={i} className={`max-w-[70%] px-3 py-3 ${i%2? 'ml-auto':'mr-auto'} rounded-lg bg-gray-100 animate-pulse`}></div>
+                ))}
               </div>
-            ))}
+            )}
+            {!messagesLoading && Array.isArray(messages) && messages.length > 0 && (
+              (() => {
+                const blocks = []
+                let lastDayKey = ''
+                for (const m of messages) {
+                  const ts = m?.timestamps?.whatsapp
+                  const dayKey = ts ? dayKeyIST(ts) : ''
+                  if (dayKey && dayKey !== lastDayKey) {
+                    lastDayKey = dayKey
+                    blocks.push(
+                      <div key={`date-${dayKey}`} className="w-full flex justify-center">
+                        <span className="date-chip">{formatDateChip(ts)}</span>
+                      </div>
+                    )
+                  }
+                  blocks.push(
+                    <div key={m._id} className={`max-w-[70%] px-3 py-1.5 text-[14px] ${m.direction==='outbound' ? 'ml-auto bubble-out' : 'mr-auto bubble-in'}`}>
+                      <div className="whitespace-pre-wrap break-words">{m.text}</div>
+                      <div className="time-ticks mt-0.5">
+                        <span className="text-[10px]">{formatTime(m.timestamps?.whatsapp)}</span>
+                        {m.direction==='outbound' && <StatusTicks status={m.status} />}
+                      </div>
+                    </div>
+                  )
+                }
+                return blocks
+              })()
+            )}
           </div>
           <div className="p-2 sm:p-3 border-t flex gap-2 bg-[var(--wa-panel)] shrink-0" style={{paddingBottom:'max(env(safe-area-inset-bottom), 0px)'}}>
             <input value={input} onChange={(e)=>setInput(e.target.value)} placeholder="Type a message" className="flex-1 border rounded-full px-3 sm:px-4 py-2 focus:outline-none bg-white" onKeyDown={(e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } }} />
