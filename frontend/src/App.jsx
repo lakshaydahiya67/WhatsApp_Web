@@ -23,6 +23,7 @@ export default function App() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [showList, setShowList] = useState(true)
+  const [ws, setWs] = useState(null)
 
   async function fetchConversations() {
     try {
@@ -57,6 +58,40 @@ export default function App() {
 
   useEffect(() => {
     fetchMessages(activeWaId)
+  }, [activeWaId])
+
+  // Polling for updates every 5s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchConversations()
+      if (activeWaId) {
+        fetchMessages(activeWaId)
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [activeWaId])
+
+  // Connect WebSocket for realtime updates (if available)
+  useEffect(() => {
+    const url = (API_BASE.replace('http', 'ws') + '/ws')
+    try {
+      const socket = new WebSocket(url)
+      socket.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data)
+          if (data?.type === 'insert') {
+            fetchConversations()
+            if (data.message?.waId === activeWaId) {
+              fetchMessages(activeWaId)
+            }
+          }
+        } catch {}
+      }
+      setWs(socket)
+      return () => socket.close()
+    } catch {
+      // ignore if ws fails
+    }
   }, [activeWaId])
 
   useEffect(() => {

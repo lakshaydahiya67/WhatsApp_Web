@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional, Literal, Dict, Any
+from typing import Optional, Literal
 from pydantic import BaseModel, Field
+from typing_extensions import Annotated
+from pydantic import StringConstraints
 
 
 Direction = Literal["inbound", "outbound"]
@@ -35,8 +37,8 @@ class MessageOut(BaseModel):
 
 
 class MessageCreate(BaseModel):
-    waId: str
-    text: str
+    waId: Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=20)]
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
 
 
 class ConversationOut(BaseModel):

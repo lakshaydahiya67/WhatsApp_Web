@@ -20,21 +20,42 @@ Create a `.env` from `.env.example` at the repo root and fill values:
 - `docs/` — extra notes/screenshots
 - `whatsapp sample payloads/` — provided JSON payloads to seed the DB
 
-### Quickstart (Local)
-1) Setup env
-- Duplicate `.env.example` → `.env` and set `MONGODB_URI`.
+### Local Quickstart
+1) Backend
+- `python -m venv backend/.venv && source backend/.venv/bin/activate`
+- `pip install -r backend/requirements.txt`
+- `uvicorn app.main:app --app-dir backend --reload`
 
-2) Backend
-- Create venv, install deps, run FastAPI (to be added in step 2.x tasks).
+2) Frontend
+- `cd frontend && npm install`
+- `VITE_API_BASE_URL=http://localhost:8000 npm run dev`
 
-3) Frontend
-- `npm install` then `npm run dev` (to be added in step 5.x tasks).
-
-4) Ingest sample payloads
-- Run `scripts/ingest_payloads.py` once (will be added in step 3.x tasks).
+3) Ingest sample payloads (one-time)
+- `source backend/.venv/bin/activate`
+- `python scripts/ingest_payloads.py`
 
 ### Deployment
-- Backend: Render/Railway/Heroku/Fly with `MONGODB_URI` set; enable CORS for frontend origin.
-- Frontend: Vercel/Netlify; set `VITE_API_BASE_URL` pointing to backend.
 
-See `requirements.md` and `tasks.md` for detailed specs and execution plan.
+#### Backend on Render
+- Use `render.yaml` (Blueprint) or create a Web Service:
+  - Runtime: Python
+  - Build Command: `pip install -r backend/requirements.txt`
+  - Start Command: `uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT`
+  - Env Vars:
+    - `MONGODB_URI`: your Atlas URI
+    - `CORS_ORIGINS`: your frontend origin (e.g., `https://<your-vercel-domain>`) or `*` for testing
+- After first deploy, run `scripts/ingest_payloads.py` locally to seed Atlas (or add a one-off job).
+
+#### Frontend on Vercel
+- In `frontend/` run `npm run build` locally to verify.
+- Push repo or import `frontend/` in Vercel.
+- Framework Preset: Vite
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Env Vars:
+  - `VITE_API_BASE_URL`: your Render backend URL (e.g., `https://<render-app>.onrender.com`)
+
+### Notes
+- WebSocket endpoint: `/ws` (used for realtime updates)
+- Polling fallback: 5s
+- Status ticks: ✓ (sent), ✓✓ (delivered grey), ✓✓ blue (read)

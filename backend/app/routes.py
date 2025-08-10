@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from . import db as db_module
 from .models import ConversationOut, MessageCreate, MessageOut
+from .ws import manager
 
 router = APIRouter()
 
@@ -92,5 +93,10 @@ async def create_message(payload: MessageCreate) -> MessageOut:
         "metaMsgId": None,
     }
 
-    await collection.insert_one(doc)
+    try:
+        await collection.insert_one(doc)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Failed to create message") from exc
+    # Broadcast to WS subscribers
+    await manager.broadcast({"type": "insert", "message": doc})
     return MessageOut(**doc)
