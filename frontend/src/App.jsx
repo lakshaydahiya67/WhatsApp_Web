@@ -24,6 +24,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [showList, setShowList] = useState(true)
   const [ws, setWs] = useState(null)
+  const [showColdStartInfo, setShowColdStartInfo] = useState(true)
 
   async function fetchConversations() {
     try {
@@ -138,6 +139,12 @@ export default function App() {
 
   return (
     <div className="h-screen p-0 md:p-6" style={{background:'var(--wa-bg)'}}>
+      {showColdStartInfo && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs sm:text-sm text-center py-2 px-3">
+          Note: backend is deployed on Render free tier and may take ~30–60 seconds to cold-start. If chats are empty, please wait and refresh.
+          <button onClick={() => setShowColdStartInfo(false)} className="ml-2 underline">Dismiss</button>
+        </div>
+      )}
       <div className="mx-auto max-w-6xl h-full bg-[var(--wa-panel)] shadow rounded-lg grid grid-cols-1 md:grid-cols-3 md:overflow-hidden">
         {/* Sidebar */}
         <div className={`md:col-span-1 flex flex-col border-r ${showList ? '' : 'hidden md:flex'}`}>
