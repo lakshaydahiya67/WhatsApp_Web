@@ -35,17 +35,24 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/")
+async def root() -> dict[str, str]:
+    # Helpful for platform health checks to avoid 404 on '/'
+    return {"service": "whatsapp-web-clone-api", "status": "ok"}
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    logger = logging.getLogger("uvicorn.access")
+    # Use standard error logger to avoid uvicorn AccessFormatter expectations
+    logger = logging.getLogger("uvicorn.error")
     path = request.url.path
     method = request.method
     try:
         response = await call_next(request)
-        logger.info(f"{method} {path} -> {response.status_code}")
+        logger.info("%s %s -> %s", method, path, getattr(response, "status_code", ""))
         return response
     except Exception as exc:
-        logger.exception(f"Unhandled error on {method} {path}: {exc}")
+        logger.exception("Unhandled error on %s %s: %s", method, path, exc)
         raise
 
 
