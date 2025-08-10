@@ -184,16 +184,16 @@ export default function App() {
   ), [conversations, activeWaId])
 
   return (
-    <div className="h-screen p-0 md:p-6" style={{background:'var(--wa-bg)'}}>
+    <div className="min-h-screen flex flex-col p-0 md:px-4 md:py-3" style={{background:'var(--wa-bg)'}}>
       {showColdStartInfo && (
-        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs sm:text-sm text-center py-2 px-3">
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm text-center py-1.5 px-3 mx-2 mt-2 rounded">
           Note: backend is deployed on Render free tier and may take ~30–60 seconds to cold-start. If chats are empty, please wait and refresh.
           <button onClick={() => setShowColdStartInfo(false)} className="ml-2 underline">Dismiss</button>
         </div>
       )}
-      <div className="mx-auto max-w-6xl h-full bg-[var(--wa-panel)] shadow rounded-lg grid grid-cols-1 md:grid-cols-3 md:overflow-hidden">
+      <div className="mx-auto w-full md:max-w-6xl flex-1 bg-[var(--wa-panel)] shadow rounded-lg grid grid-cols-1 md:grid-cols-3 md:overflow-hidden mt-2 min-h-0">
         {/* Sidebar */}
-        <div className={`md:col-span-1 flex flex-col border-r ${showList ? '' : 'hidden md:flex'}`}>
+        <div className={`md:col-span-1 flex flex-col border-r w-full ${showList ? '' : 'hidden md:flex'}`}>
           <div className="h-14 px-4 flex items-center justify-between bg-[var(--wa-panel)] border-b">
             <div className="font-semibold">Chats</div>
           </div>
@@ -239,7 +239,7 @@ export default function App() {
         </div>
 
         {/* Chat area */}
-        <div className={`md:col-span-2 flex flex-col ${showList ? 'hidden md:flex' : ''}`}>
+        <div className={`md:col-span-2 flex flex-col w-full ${showList ? 'hidden md:flex' : ''}`}>
           <div className="h-14 px-4 flex items-center justify-between bg-[var(--wa-panel)] border-b">
             <div>
               <div className="font-medium">{activeConversation?.name || activeWaId || 'Select a chat'}</div>
@@ -284,9 +284,9 @@ export default function App() {
               })()
             )}
           </div>
-          <div className="p-2 sm:p-3 border-t flex gap-2 bg-[var(--wa-panel)] shrink-0" style={{paddingBottom:'max(env(safe-area-inset-bottom), 0px)'}}>
-            <input value={input} onChange={(e)=>setInput(e.target.value)} placeholder="Type a message" className="flex-1 border rounded-full px-3 sm:px-4 py-2 focus:outline-none bg-white" onKeyDown={(e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } }} />
-            <button onClick={sendMessage} disabled={loading || !activeWaId} className="bg-[var(--wa-accent)] text-white px-3 sm:px-4 py-2 rounded-full disabled:opacity-50 whitespace-nowrap">Send</button>
+          <div className="p-2 sm:p-3 border-t flex items-center gap-2 bg-[var(--wa-panel)] shrink-0" style={{paddingBottom:'max(env(safe-area-inset-bottom), 0px)'}}>
+            <input value={input} onChange={(e)=>setInput(e.target.value)} placeholder="Type a message" className="flex-1 border rounded-full px-3 sm:px-4 h-10 focus:outline-none bg-white" onKeyDown={(e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendMessage(); } }} />
+            <button onClick={sendMessage} disabled={loading || !activeWaId} className="bg-[var(--wa-accent)] text-white px-4 h-10 rounded-full disabled:opacity-50 whitespace-nowrap inline-flex items-center justify-center">Send</button>
           </div>
         </div>
       </div>
