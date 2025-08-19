@@ -50,3 +50,36 @@ class ConversationOut(BaseModel):
     lastMessageStatus: Status = None
 
     
+
+# ===== Users / Auth =====
+
+UsernameStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=50)]
+EmailStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=100)]
+PasswordStr = Annotated[str, StringConstraints(min_length=6, max_length=128)]
+
+
+class UserCreate(BaseModel):
+    username: UsernameStr
+    password: PasswordStr
+    email: Optional[EmailStr] = None
+
+
+class UserOut(BaseModel):
+    id: str = Field(alias="_id")
+    username: str
+    email: Optional[str] = None
+    disabled: Optional[bool] = False
+
+    class Config:
+        populate_by_name = True
+
+
+class UserInDB(BaseModel):
+    _id: str | None = None
+    username: str
+    email: Optional[str] = None
+    hashed_password: str
+    disabled: Optional[bool] = False
+    created_at: Optional[int] = None
+
+

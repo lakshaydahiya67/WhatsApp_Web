@@ -7,6 +7,7 @@ import logging
 from .config import CORS_ORIGINS
 from .db import connect_to_mongo, close_mongo_connection
 from .routes import router as api_router
+from .routes_auth import router as auth_router
 from .ws import manager
 
 app = FastAPI(title="WhatsApp Web Clone API")
@@ -57,6 +58,7 @@ async def log_requests(request: Request, call_next):
 
 
 app.include_router(api_router)
+app.include_router(auth_router)
 
 
 @app.websocket("/ws")

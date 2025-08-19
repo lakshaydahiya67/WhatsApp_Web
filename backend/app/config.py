@@ -23,3 +23,9 @@ def parse_cors(origins_raw: str) -> List[str]:
 CORS_ORIGINS: List[str] = parse_cors(CORS_ORIGINS_RAW)
 DATABASE_NAME: str = "whatsapp"
 COLLECTION_MESSAGES: str = "processed_messages"
+COLLECTION_USERS: str = "users"
+
+# JWT / Auth settings
+SECRET_KEY: str | None = get_env_optional("SECRET_KEY")
+JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))

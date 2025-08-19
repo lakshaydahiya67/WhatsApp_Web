@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { getToken, setToken, authFetch } from './auth'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -65,6 +66,22 @@ export default function App() {
   const [showList, setShowList] = useState(true)
   const [ws, setWs] = useState(null)
   const [showColdStartInfo, setShowColdStartInfo] = useState(true)
+  const [authUser, setAuthUser] = useState(null)
+  const [authForm, setAuthForm] = useState({ username: '', password: '' })
+  const token = getToken()
+
+  async function fetchMe() {
+    if (!getToken()) { setAuthUser(null); return }
+    try {
+      const res = await authFetch(`${API_BASE}/me`)
+      if (!res.ok) throw new Error('unauth')
+      const data = await res.json()
+      setAuthUser(data)
+    } catch {
+      setToken('')
+      setAuthUser(null)
+    }
+  }
 
   async function fetchConversations(silent = false) {
     try {
@@ -100,7 +117,8 @@ export default function App() {
   }
 
   useEffect(() => {
-    fetchConversations()
+  fetchMe()
+  fetchConversations()
   }, [])
 
   useEffect(() => {
@@ -185,6 +203,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col p-0 md:px-4 md:py-3" style={{background:'var(--wa-bg)'}}>
+      <div className="mx-auto w-full md:max-w-6xl mt-2 px-2 flex items-center justify-between">
+        <div className="text-sm text-gray-700">{authUser ? `Signed in as ${authUser.username}` : 'Not signed in'}</div>
+        <div className="flex items-center gap-2">
+          {!authUser ? (
+            <form className="flex items-center gap-2" onSubmit={async (e)=>{e.preventDefault(); try{ const res = await fetch(`${API_BASE}/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(authForm) }); const data = await res.json(); if (res.ok && data?.access_token){ setToken(data.access_token); setAuthForm({username:'', password:''}); await fetchMe(); } } catch{} }}>
+              <input value={authForm.username} onChange={e=>setAuthForm(v=>({...v, username:e.target.value}))} placeholder="username" className="border rounded px-2 h-8" />
+              <input value={authForm.password} onChange={e=>setAuthForm(v=>({...v, password:e.target.value}))} placeholder="password" type="password" className="border rounded px-2 h-8" />
+              <button className="bg-[var(--wa-accent)] text-white px-3 h-8 rounded">Login</button>
+            </form>
+          ) : (
+            <button className="text-[var(--wa-accent)] underline" onClick={()=>{ setToken(''); setAuthUser(null); }}>Logout</button>
+          )}
+        </div>
+      </div>
       {showColdStartInfo && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm text-center py-1.5 px-3 mx-2 mt-2 rounded">
           Note: backend is deployed on Render free tier and may take ~30–60 seconds to cold-start. If chats are empty, please wait and refresh.
